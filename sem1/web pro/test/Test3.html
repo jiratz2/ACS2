@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Test 3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+
+  <h1>Sorting Name</h1>
+  <p>ใส่ชื่อ โดยชื่อจะไปเรียงในกล่องข้อความด้านล่าง</p>
+  <label>Name: </label>
+  <input type="text" id="name">
+  <button onclick="getInputValue();" type="button">Add</button>
+  <h2>ชื่อที่เรียงแล้ว</h2>
+  <div style="border: 1px solid black;border-radius: 10px; height: 500px;">
+    <p id="sort">
+    </p>
+  </div>
+</body>
+  <script>
+    var items = [];
+    function getInputValue(){
+      var inputvalue = document.getElementById("name").value;
+      items.push(inputvalue);
+      //console.log(items);
+      let sorted = items.sort();
+      console.log(sorted);
+      document.getElementById("sort").innerHTML = sorted;
+    }
+  </script>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+        <meta charset="utf-8">
+        <title>Test 2</title>
+        <style>
+                button{
+                        margin: 2px;
+                }
+                #buttons {
+                        text-align: center;
+                        color: black;
+                }
+                .set{
+                        display: flex;
+                        justify-content: center;        
+                }
+                #square {
+                        position: absolute;
+                        top: 150px;
+                        left: 100px;
+                        width: 200px;
+                        height: 200px;
+                        border: 2px solid black;
+                        padding: 10px;
+                        background-color: #e0e0e0;
+                }
+                h2{
+                        font-size: medium;
+                        position: absolute;
+                        top: 150px;
+                        left: 125px;
+                        z-index: 2;       
+                }
+                .box{
+                        position: absolute;
+                        z-index: 10;
+                }
+                div {
+                        padding: 10px;
+                }
+        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+        <h1>Positioning Elements</h1>
+        <div class="set" id="buttons">
+                <button>ซ้าย</button>
+                <button>ขวา</button>
+                <button>ขึ้น</button>
+                <button>ลง</button>
+                <button>ซ่อน</button>
+                <button>แสดง</button>
+        </div>
+        <div style="border-top: solid 1px black; width: 100; height: 0;"></div>
+        <div class="box">
+                <h2>กล่องนี้จะขยับตามคำสั่ง</h2>
+                <span id="square"></span>
+        </div>
+        
+</body>
+
+</html>
