@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Process Scheduling Algorithms</title>
+    <style>
+    * {
+        box-sizing: border-box;
+        font-family: "Roboto", sans-serif;
+    }
+    body {
+        padding: 20px;
+        background-color: #f8fafc;
+        color: #333;
+    }
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .input-section {
+        background-color: #f9f9f9;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border: 1px solid #e3e4e6;
+    }
+    .input-group input, .input-group select {
+        width: calc(100% - 20px);
+        margin: 5px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        transition: border 0.3s ease;
+    }
+    input:focus {
+        border-color: #006aff;
+    }
+    button {
+        padding: 10px 15px;
+        margin: 10px;
+        background-color: #006aff;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    button:hover {
+        background-color: #005ae6;
+    }
+    .button-group{
+        display: flex;
+        justify-content: flex-end;
+        margin: 10px;
+
+    }
+    .algorithms {
+        display: grid;
+        gap: 20px;
+    }
+    .algorithm {
+        border: 1px solid #e3e4e6;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #fcfcfc;
+    }
+    .gantt-chart {
+        display: flex;
+        gap: 1px;
+        overflow-x: auto;
+        width: 800px;  /* Set width to match JavaScript */
+        padding-top: 10px;
+    }
+    .gantt-block {
+        min-width: 30px;  /* Reduced width */
+        height: 20px;     /* Reduced height */
+        border: 1px solid #333;
+        background-color: #d0ebff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;  /* Reduced font size */
+        color: #333;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+    th {
+        background-color: #f4f5f7;
+    }
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>Process Scheduling Algorithms</h1>
+        
+        <div class="input-section">
+            <div class="input-group">
+                <div class="button-group">
+                    <button onclick="toggleInputMode('random')">Random Input</button>
+                </div>
+                <h2>Manual Input</h2>
+            </div>
+            
+            <div id="manualInput">
+                <div class="input-group">
+                    <input type="number" id="processId" placeholder="Process ID" min="1">
+                    <input type="number" id="arrivalTime" placeholder="Arrival Time" min="0">
+                    <input type="number" id="burstTime" placeholder="Burst Time" min="1">
+                    <input type="number" id="priority" placeholder="Priority" min="1">
+                    <div class="button-group">
+                        <button onclick="addProcess()">Add Process</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <h3>Select time quantum (* For Round Robin *)</h3>
+                <input type="number" id="quantum" placeholder="Time Quantum for RR" value="2" min="1">
+            </div>
+            <div class="button-group">
+                <button onclick="calculateAll()">Calculate All</button>
+                <button onclick="location.reload()">Reset</button>
+            </div>
+        </div>
+
+        <table id="processTable">
+            <thead>
+                <tr>
+                    <th>Process ID</th>
+                    <th>Arrival Time</th>
+                    <th>Burst Time</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="algorithms" id="algorithmsContainer"></div>
+    </div>
+
+    <script>
+        // Global variables
+        let processes = [];
+        let currentInputMode = 'manual';
+
+        // Display functions
+        function displayAlgorithmResult(result) {
+            const div = document.createElement('div');
+            div.className = 'algorithm';
+            
+            div.innerHTML = `
+                <h3>${result.name}</h3>
+                <p>Average Waiting Time: ${result.waitingTime.toFixed(2)}</p>
+                <p>Average Turnaround Time: ${result.turnaroundTime.toFixed(2)}</p>
+                <div class="gantt-chart">
+                    ${createGanttChart(result.schedule)}
+                </div>
+            `;
+            
+            return div;
+        }
+
+        function createGanttChart(schedule) {
+            const containerWidth = 800;  // Set the desired width of the Gantt chart container in pixels
+            const totalTime = Math.max(...schedule.map(s => s.end));  // Total time span
+            const unitWidth = containerWidth / totalTime;  // Width of each unit time
+        
+            let html = '';
+            schedule.forEach(s => {
+                html += `
+                    <div class="gantt-block" style="width: ${unitWidth * (s.end - s.start)}px;">
+                        P${s.id}
+                    </div>
+                `;
+            });
+            return html;
+        }
+        
+
+        function createTimeScale(schedule) {
+            const endTime = Math.max(...schedule.map(s => s.end));
+            let timeScale = '<div style="display: flex;">';
+            for (let i = 0; i <= endTime; i++) {
+                timeScale += `<div class="gantt-time">${i}</div>`;
+            }
+            return timeScale + '</div>';
+        }
+
+        // Input handling functions
+        function toggleInputMode(mode) {
+            currentInputMode = mode;
+            if (mode === 'random') {
+                generateRandomProcesses();
+            }
+        }
+
+        function generateRandomProcesses() {
+            const count = Math.floor(Math.random() * 5) + 3; // 3-7 processes
+            processes = [];
+            for (let i = 0; i < count; i++) {
+                processes.push({
+                    id: i + 1,
+                    arrivalTime: Math.floor(Math.random() * 10),
+                    burstTime: Math.floor(Math.random() * 10) + 1,
+                    priority: Math.floor(Math.random() * 5) + 1
+                });
+            }
+            updateProcessTable();
+            calculateAll();
+        }
+
+        function addProcess() {
+            const process = {
+                id: parseInt(document.getElementById('processId').value),
+                arrivalTime: parseInt(document.getElementById('arrivalTime').value),
+                burstTime: parseInt(document.getElementById('burstTime').value),
+                priority: parseInt(document.getElementById('priority').value)
+            };
+            
+            if (!process.id || !process.burstTime) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            processes.push(process);
+            updateProcessTable();
+        }
+
+        function updateProcessTable() {
+            const tbody = document.querySelector('#processTable tbody');
+            tbody.innerHTML = '';
+            processes.forEach(p => {
+                const row = tbody.insertRow();
+                row.insertCell().textContent = p.id;
+                row.insertCell().textContent = p.arrivalTime;
+                row.insertCell().textContent = p.burstTime;
+                row.insertCell().textContent = p.priority;
+            });
+        }
+
+        // Scheduling algorithms
+        function calculateFCFS(processes) {
+            const sorted = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+            let currentTime = 0;
+            let waitingTime = 0;
+            let turnaroundTime = 0;
+            const schedule = [];
+
+            sorted.forEach(p => {
+                if (currentTime < p.arrivalTime) {
+                    currentTime = p.arrivalTime;
+                }
+                schedule.push({
+                    id: p.id,
+                    start: currentTime,
+                    end: currentTime + p.burstTime
+                });
+                waitingTime += currentTime - p.arrivalTime;
+                turnaroundTime += (currentTime - p.arrivalTime) + p.burstTime;
+                currentTime += p.burstTime;
+            });
+
+            return {
+                name: 'FCFS',
+                schedule,
+                waitingTime: waitingTime / processes.length,
+                turnaroundTime: turnaroundTime / processes.length
+            };
+        }
+
+        function calculateRR(processes, quantum) {
+            const queue = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
+            const remainingTime = new Map(queue.map(p => [p.id, p.burstTime]));
+            let currentTime = 0;
+            const schedule = [];
+            const completion = new Map();
+
+            while ([...remainingTime.values()].some(t => t > 0)) {
+                const available = queue.filter(p => p.arrivalTime <= currentTime && remainingTime.get(p.id) > 0);
+                
+                if (available.length === 0) {
+                    currentTime++;
+                    continue;
+                }
+
+                const p = available[0];
+                const executeTime = Math.min(quantum, remainingTime.get(p.id));
+                
+                schedule.push({
+                    id: p.id,
+                    start: currentTime,
+                    end: currentTime + executeTime
+                });
+
+                remainingTime.set(p.id, remainingTime.get(p.id) - executeTime);
+                currentTime += executeTime;
+
+                if (remainingTime.get(p.id) === 0) {
+                    completion.set(p.id, currentTime);
+                }
+
+                queue.push(queue.shift());
+            }
+
+            let waitingTime = 0;
+            let turnaroundTime = 0;
+            processes.forEach(p => {
+                const completionTime = completion.get(p.id);
+                turnaroundTime += completionTime - p.arrivalTime;
+                waitingTime += completionTime - p.arrivalTime - p.burstTime;
+            });
+
+            return {
+                name: 'Round Robin',
+                schedule,
+                waitingTime: waitingTime / processes.length,
+                turnaroundTime: turnaroundTime / processes.length
+            };
+        }
+
+        function calculateSJF(processes) {
+            const unfinished = [...processes];
+            let currentTime = 0;
+            const schedule = [];
+            let waitingTime = 0;
+            let turnaroundTime = 0;
+
+            while (unfinished.length > 0) {
+                const available = unfinished
+                    .filter(p => p.arrivalTime <= currentTime)
+                    .sort((a, b) => a.burstTime - b.burstTime);
+
+                if (available.length === 0) {
+                    currentTime++;
+                    continue;
+                }
+
+                const p = available[0];
+                schedule.push({
+                    id: p.id,
+                    start: currentTime,
+                    end: currentTime + p.burstTime
+                });
+
+                waitingTime += currentTime - p.arrivalTime;
+                turnaroundTime += (currentTime - p.arrivalTime) + p.burstTime;
+                currentTime += p.burstTime;
+
+                unfinished.splice(unfinished.indexOf(p), 1);
+            }
+
+            return {
+                name: 'SJF',
+                schedule,
+                waitingTime: waitingTime / processes.length,
+                turnaroundTime: turnaroundTime / processes.length
+            };
+        }
+        // SRTF (Shortest Remaining Time First)
+        function calculateSRTF(processes) {
+            const remainingTime = new Map(processes.map(p => [p.id, p.burstTime]));
+            const completion = new Map();
+            let currentTime = 0;
+            const schedule = [];
+            let currentProcess = null;
+
+            while ([...remainingTime.values()].some(t => t > 0)) {
+                const available = processes
+                    .filter(p => p.arrivalTime <= currentTime && remainingTime.get(p.id) > 0)
+                    .sort((a, b) => remainingTime.get(a.id) - remainingTime.get(b.id));
+
+                if (available.length === 0) {
+                    currentTime++;
+                    continue;
+                }
+
+                const p = available[0];
+                if (currentProcess !== p.id) {
+                    if (currentProcess !== null) {
+                        schedule.push({
+                            id: currentProcess,
+                            start: schedule[schedule.length - 1].start,
+                            end: currentTime
+                        });
+                    }
+                    currentProcess = p.id;
+                    schedule.push({
+                        id: p.id,
+                        start: currentTime,
+                        end: currentTime + 1
+                    });
+                } else {
+                    schedule[schedule.length - 1].end = currentTime + 1;
+                }
+
+                remainingTime.set(p.id, remainingTime.get(p.id) - 1);
+                if (remainingTime.get(p.id) === 0) {
+                    completion.set(p.id, currentTime + 1);
+                }
+                currentTime++;
+            }
+
+            let waitingTime = 0;
+            let turnaroundTime = 0;
+            processes.forEach(p => {
+                const completionTime = completion.get(p.id);
+                turnaroundTime += completionTime - p.arrivalTime;
+                waitingTime += completionTime - p.arrivalTime - p.burstTime;
+            });
+
+            return {
+                name: 'SRTF',
+                schedule,
+                waitingTime: waitingTime / processes.length,
+                turnaroundTime: turnaroundTime / processes.length
+            };
+        }
+
+        // HRRN (Highest Response Ratio Next)
+        function calculateHRRN(processes) {
+            const unfinished = [...processes];
+            let currentTime = 0;
+            const schedule = [];
+            let waitingTime = 0;
+            let turnaroundTime = 0;
+
+            while (unfinished.length > 0) {
+                const available = unfinished.filter(p => p.arrivalTime <= currentTime);
+                
+                if (available.length === 0) {
+                    currentTime = Math.min(...unfinished.map(p => p.arrivalTime));
+                    continue;
+                }
+
+                // Calculate response ratio for each available process
+                const process = available.reduce((prev, curr) => {
+                    const prevWaitTime = currentTime - prev.arrivalTime;
+                    const currWaitTime = currentTime - curr.arrivalTime;
+                    const prevRatio = (prevWaitTime + prev.burstTime) / prev.burstTime;
+                    const currRatio = (currWaitTime + curr.burstTime) / curr.burstTime;
+                    return currRatio > prevRatio ? curr : prev;
+                });
+
+                schedule.push({
+                    id: process.id,
+                    start: currentTime,
+                    end: currentTime + process.burstTime
+                });
+
+                waitingTime += currentTime - process.arrivalTime;
+                turnaroundTime += (currentTime - process.arrivalTime) + process.burstTime;
+                currentTime += process.burstTime;
+                unfinished.splice(unfinished.indexOf(process), 1);
+            }
+
+            return {
+                name: 'HRRN',
+                schedule,
+                waitingTime: waitingTime / processes.length,
+                turnaroundTime: turnaroundTime / processes.length
+            };
+        }
+
+        // Priority Scheduling
+        function calculatePriority(processes) {
+            const unfinished = [...processes];
+            let currentTime = 0;
+            const schedule = [];
+            let waitingTime = 0;
+            let turnaroundTime = 0;
+
+            while (unfinished.length > 0) {
+                const available = unfinished
+                    .filter(p => p.arrivalTime <= currentTime)
+                    .sort((a, b) => a.priority - b.priority);  // Lower priority number = higher priority
+
+                if (available.length === 0) {
+                    currentTime++;
+                    continue;
+                }
+
+                const p = available[0];
+                schedule.push({
+                    id: p.id,
+                    start: currentTime,
+                    end: currentTime + p.burstTime
+                });
+
+                waitingTime += currentTime - p.arrivalTime;
+                turnaroundTime += (currentTime - p.arrivalTime) + p.burstTime;
+                currentTime += p.burstTime;
+                unfinished.splice(unfinished.indexOf(p), 1);
+            }
+
+            return {
+                name: 'Priority',
+                schedule,
+                waitingTime: waitingTime / processes.length,
+                turnaroundTime: turnaroundTime / processes.length
+            };
+        }
+
+        // Multilevel Queue
+        function calculateMultilevelQueue(processes) {
+            // Assuming 3 queues: High priority (0-1), Medium priority (2-3), Low priority (4-5)
+            const queues = [
+                [], // High priority queue
+                [], // Medium priority queue
+                []  // Low priority queue
+            ];
+
+            // Distribute processes to queues based on priority
+            processes.forEach(p => {
+                if (p.priority <= 1) queues[0].push({...p});
+                else if (p.priority <= 3) queues[1].push({...p});
+                else queues[2].push({...p});
+            });
+
+            let currentTime = 0;
+            const schedule = [];
+            const completion = new Map();
+            let waitingTime = 0;
+            let turnaroundTime = 0;
+
+            // Process each queue with different algorithms
+            // High priority queue: RR with quantum = 2
+            // Medium priority queue: SJF
+            // Low priority queue: FCFS
+            while (queues.some(q => q.length > 0)) {
+                // Check high priority queue first (RR)
+                if (queues[0].length > 0) {
+                    const quantum = 2;
+                    const p = queues[0][0];
+                    if (p.arrivalTime <= currentTime) {
+                        const executeTime = Math.min(quantum, p.burstTime);
+                        schedule.push({
+                            id: p.id,
+                            start: currentTime,
+                            end: currentTime + executeTime
+                        });
+                        p.burstTime -= executeTime;
+                        currentTime += executeTime;
+                        
+                        if (p.burstTime <= 0) {
+                            completion.set(p.id, currentTime);
+                            queues[0].shift();
+                        } else {
+                            queues[0].push(queues[0].shift());
+                        }
+                        continue;
+                    }
+                }
+
+                // Check medium priority queue (SJF)
+                if (queues[1].length > 0) {
+                    const available = queues[1].filter(p => p.arrivalTime <= currentTime);
+                    if (available.length > 0) {
+                        const p = available.reduce((min, p) => p.burstTime < min.burstTime ? p : min);
+                        schedule.push({
+                            id: p.id,
+                            start: currentTime,
+                            end: currentTime + p.burstTime
+                        });
+                        currentTime += p.burstTime;
+                        completion.set(p.id, currentTime);
+                        queues[1].splice(queues[1].indexOf(p), 1);
+                        continue;
+                    }
+                }
+
+                // Check low priority queue (FCFS)
+                if (queues[2].length > 0) {
+                    const p = queues[2][0];
+                    if (p.arrivalTime <= currentTime) {
+                        schedule.push({
+                            id: p.id,
+                            start: currentTime,
+                            end: currentTime + p.burstTime
+                        });
+                        currentTime += p.burstTime;
+                        completion.set(p.id, currentTime);
+                        queues[2].shift();
+                        continue;
+                    }
+                }
+
+                // If no process can be executed, increment time
+                currentTime++;
+            }
+
+            // Calculate waiting and turnaround times
+            processes.forEach(p => {
+                const completionTime = completion.get(p.id);
+                turnaroundTime += completionTime - p.arrivalTime;
+                waitingTime += completionTime - p.arrivalTime - p.originalBurstTime;
+            });
+
+            return {
+                name: 'Multilevel Queue',
+                schedule,
+                waitingTime: waitingTime / processes.length,
+                turnaroundTime: turnaroundTime / processes.length
+            };
+        }
+
+        // Calculate and display all results
+        function calculateAll() {
+            if (processes.length === 0) {
+                alert('Please add some processes first');
+                return;
+            }
+        
+            const container = document.getElementById('algorithmsContainer');
+            container.innerHTML = '';
+        
+            const quantum = parseInt(document.getElementById('quantum').value) || 2;
+        
+            const algorithms = [
+                calculateFCFS(processes),
+                calculateRR(processes, quantum),
+                calculateSJF(processes),
+                calculateSRTF(processes),
+                calculateHRRN(processes),
+                calculatePriority(processes),
+                calculateMultilevelQueue(processes)
+            ];
+        
+            algorithms.forEach(result => {
+                container.appendChild(displayAlgorithmResult(result));
+            });
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            if (currentInputMode === 'random') {
+                generateRandomProcesses();
+            }
+        });
+    </script>
+</body>
+</html>
