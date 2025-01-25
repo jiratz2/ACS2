@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: black;
+        }
+        .user-form {
+            background-color: #f4f4f4;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .user-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .user-form button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #userList {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+        }
+        .user-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Management</h1>
+
+    <div class="user-form">
+        <h2>Add/Update User</h2>
+        <input type="number" id="userId" placeholder="User ID">
+        <input type="text" id="userName" placeholder="Name">
+        <input type="email" id="userEmail" placeholder="Email">
+        <button onclick="addUser()">Add User</button>
+        <button onclick="updateUser()">Update User</button>
+    </div>
+
+    <div id="userList">
+        <h2>User List</h2>
+        <div id="users"></div>
+    </div>
+
+    <script>
+        // Fetch and display users
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/user');
+                const users = await response.json();
+                const usersContainer = document.getElementById('users');
+                usersContainer.innerHTML = '';
+
+                users.forEach(user => {
+                    const userDiv = document.createElement('div');
+                    userDiv.classList.add('user-item');
+                    userDiv.innerHTML = `
+                        <div>
+                            <strong>ID:</strong> ${user.id}<br>
+                            <strong>Name:</strong> ${user.name}<br>
+                            <strong>Email:</strong> ${user.email}
+                        </div>
+                        <div>
+                            <button onclick="deleteUser(${user.id})">Delete</button>
+                        </div>
+                    `;
+                    usersContainer.appendChild(userDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        // Add a new user
+        async function addUser() {
+            const id = document.getElementById('userId').value;
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+
+            if (!id || !name || !email) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id, name, email })
+                });
+
+                if (response.ok) {
+                    fetchUsers(); // Refresh user list
+                    // Clear input fields
+                    document.getElementById('userId').value = '';
+                    document.getElementById('userName').value = '';
+                    document.getElementById('userEmail').value = '';
+                } else {
+                    const result = await response.json();
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error adding user:', error);
+            }
+        }
+
+        // Update an existing user
+        async function updateUser() {
+            const id = document.getElementById('userId').value;
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+
+            if (!id) {
+                alert('Please provide a User ID to update');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/user/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+
+                if (response.ok) {
+                    fetchUsers(); // Refresh user list
+                    // Clear input fields
+                    document.getElementById('userId').value = '';
+                    document.getElementById('userName').value = '';
+                    document.getElementById('userEmail').value = '';
+                } else {
+                    const result = await response.json();
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error updating user:', error);
+            }
+        }
+
+        // Delete a user
+        async function deleteUser(id) {
+            try {
+                const response = await fetch(`/api/user/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    fetchUsers(); // Refresh user list
+                } else {
+                    const result = await response.json();
+                    alert(result.message);
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+            }
+        }
+
+        // Fetch users when page loads
+        fetchUsers();
+    </script>
+</body>
+</html>

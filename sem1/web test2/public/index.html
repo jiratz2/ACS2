@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAB TEST2</title>
+</head>
+<body>
+    <h1>Lab test2</h1>
+    <div class="user-form">
+        <button onclick="FunctionAlert()">Alert</button>
+        <button onclick="window.location = 'http://localhost:4664/api/form'">ไปหน้าฟอร์มข้อ 7</button>
+        <br>
+        <input type="text" id="userName" placeholder="ข้อ 9 กรอกชื่อ">
+        <input type="submit" value="ส่ง" onclick="addUser()"></input>
+    </div>
+    <div id="userList">
+        <h2>User List</h2>
+        <div id="users"></div>
+    </div>
+
+    <script>
+        function FunctionAlert(){
+            alert("Alert button was clicked");
+        };
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/user');
+                const users = await response.json();
+                const usersContainer = document.getElementById('users');
+                usersContainer.innerHTML = '';
+
+                users.forEach(user => {
+                    const userDiv = document.createElement('div');
+                    userDiv.classList.add('user-item');
+                    userDiv.innerHTML = `
+                        <div>
+                            <strong>Name:</strong> ${user.name}<br>
+                        </div>
+                    `;
+                    usersContainer.appendChild(userDiv);
+                });
+            } catch (error) {
+                console.error('Error fetching users:');
+            }
+        }
+
+        async function addUser() {
+            const name = document.getElementById('userName').value;
+
+            if( !name ){
+                alert('Please fill in the fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/user',{
+                    method : 'POST',
+                    body: JSON.stringify({name})
+                });
+                if(response.ok){
+                    fetchUsers();
+                    document.getElementById('userName').value = '';
+                }else{
+                    const result = await response.json();
+                    alert(result.message);
+                }
+            }catch(error){
+                console.error('Error adding user : ',error);
+            }
+        }
+    </script>
+
+</body>
+</html>
