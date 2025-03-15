@@ -1,0 +1,22 @@
+export const data = [
+    { id: 1, title: 'Complete React Native tutorial', completed: false },
+    { id: 2, title: 'Buy groceries', completed: true },
+    { id: 3, title: 'Prepare presentation', completed: false },
+    { id: 4, title: 'Schedule dentist appointment', completed: false },
+    { id: 5, title: 'Update portfolio website', completed: false },
+    { id: 6, title: 'Read technical documentation', completed: true },
+    { id: 7, title: 'Exercise for 30 minutes', completed: false },
+    { id: 8, title: 'Clean apartment', completed: true },
+    { id: 9, title: 'Pay monthly bills', completed: true },
+    { id: 10, title: 'Call family', completed: false },
+    { id: 11, title: 'Fix app bug', completed: false },
+    { id: 12, title: 'Write blog post', completed: false },
+    { id: 13, title: 'Backup project files', completed: true },
+    { id: 14, title: 'Learn TypeScript', completed: false },
+    { id: 15, title: 'Attend team meeting', completed: false },
+    { id: 16, title: 'Review code changes', completed: true },
+    { id: 17, title: 'Update dependencies', completed: false },
+    { id: 18, title: 'Create unit tests', completed: false },
+    { id: 19, title: 'Optimize database queries', completed: false },
+    { id: 20, title: 'Deploy application', completed: false }
+];
